@@ -124,32 +124,24 @@ def build_model3():
 
 
 
+
 def build_model50k():
-    inputs = Input(shape=(32, 32, 3))
-
-    # Convolutional block 1
-    x = SeparableConv2D(16, (3, 3), padding='same', activation='relu')(inputs)
-    x = BatchNormalization()(x)
-    x = MaxPooling2D()(x)
-    x = Dropout(0.2)(x)
-
-    # Convolutional block 2
-    x = SeparableConv2D(32, (3, 3), padding='same', activation='relu')(x)
-    x = BatchNormalization()(x)
-    x = MaxPooling2D()(x)
-    x = Dropout(0.3)(x)
-
-    # Flatten and dense layers
-    x = Flatten()(x)
-    x = Dense(23.9, activation='relu')(x)  # Reduce the number of units here
-    x = BatchNormalization()(x)
-    x = Dropout(0.5)(x)
-
-    outputs = Dense(10, activation='softmax')(x)
-
-    model = Model(inputs=inputs, outputs=outputs)
-    model.compile(optimizer='adam', loss='sparse_categorical_crossentropy', metrics=['accuracy'])
-
+    model = Sequential([
+        Conv2D(32, kernel_size=(3, 3), strides=(2, 2), padding='same', activation='relu', input_shape=(32, 32, 3)),
+        BatchNormalization(),
+        Conv2D(64, kernel_size=(3, 3), strides=(2, 2), padding='same', activation='relu'),
+        BatchNormalization(),
+        Conv2D(32, kernel_size=(3, 3), strides=(2, 2), padding='same', activation='relu'),
+        BatchNormalization(),
+        MaxPooling2D(pool_size=(4, 4), strides=(4, 4)),
+        Flatten(),
+        Dense(12, activation='relu'),
+        BatchNormalization(),
+        Dense(10, activation='softmax')
+    ])
+    model.compile(optimizer='adam',
+                  loss='sparse_categorical_crossentropy',
+                  metrics=['accuracy'])
     return model
 
 # no training or dataset construction should happen above this line
