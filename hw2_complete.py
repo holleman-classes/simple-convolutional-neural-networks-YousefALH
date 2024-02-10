@@ -10,6 +10,7 @@ import matplotlib.pyplot as plt
 from tensorflow.keras.models import Model
 from tensorflow.keras.layers import Input, Conv2D, BatchNormalization, Activation, Add, Flatten, Dense, Dropout
 from tensorflow.keras.activations import relu
+from tensorflow.keras import Model, layers, Input
 
 ## 
 
@@ -75,51 +76,51 @@ def build_model2():
 
 def build_model3():
     inputs = Input(shape=(32, 32, 3))
+    
+    residual = layers.Conv2D(32, (3, 3), strides=(2, 2), name='C1', activation='relu', padding='same')(inputs)
+    c1 = layers.BatchNormalization()(residual)
+    c1 = layers.Dropout(0.5)(c1)
 
-    # Initial Convolution block
-    x = Conv2D(32, (3, 3), strides=(2, 2), padding="same")(inputs)
-    x = BatchNormalization()(x)
-    x = Activation('relu')(x)
-    x = Dropout(0.2)(x)
+    c2 = layers.Conv2D(64, (3, 3), strides=(2, 2), name='C2', activation='relu', padding='same')(c1)
+    c2 = layers.BatchNormalization()(c2)
+    c2 = layers.Dropout(0.5)(c2)
+    
+    c3 = layers.Conv2D(128, (3, 3), strides=(2, 2), name='C3', activation='relu', padding='same')(c2)
+    c3 = layers.BatchNormalization()(c3)
+    c3 = layers.Dropout(0.5)(c3)
 
-    # Stage 1: Convolutional block with residual connection
-    residual = Conv2D(64, (1, 1), strides=(2, 2), padding="same", use_bias=False)(x)
-    x = Conv2D(64, (3, 3), padding="same")(x)
-    x = BatchNormalization()(x)
-    x = Activation('relu')(x)
-    x = Dropout(0.2)(x)
-    x = Conv2D(64, (3, 3), strides=(2, 2), padding="same")(x)
-    x = BatchNormalization()(x)
-    x = Add()([x, residual])
-    x = Activation('relu')(x)
-    x = Dropout(0.2)(x)
+    s1 = layers.Conv2D(128, (1, 1), strides=(4, 4), name="S1")(residual)
+    s1 = layers.Add()([s1, c3])
 
-    # Preparing for next residual connection
-    residual = Conv2D(128, (1, 1), strides=(2, 2), padding="same", use_bias=False)(x)
+    c4 = layers.Conv2D(128, (3, 3), name='C4', activation='relu', padding='same')(s1)
+    c4 = layers.BatchNormalization()(c4)
+    c4 = layers.Dropout(0.5)(c4)
 
-    # Stage 2: Another block, increasing filters
-    x = Conv2D(128, (3, 3), padding="same")(x)
-    x = BatchNormalization()(x)
-    x = Activation('relu')(x)
-    x = Dropout(0.2)(x)
-    x = Conv2D(128, (3, 3), strides=(2, 2), padding="same")(x)
-    x = BatchNormalization()(x)
-    x = Add()([x, residual])
-    x = Activation('relu')(x)
-    x = Dropout(0.2)(x)
+    c5 = layers.Conv2D(128, (3, 3), name='C5', activation='relu', padding='same')(c4)
+    c5 = layers.BatchNormalization()(c5)
+    c5 = layers.Dropout(0.5)(c5)
 
-    # Final layers after all blocks
-    x = MaxPooling2D((4, 4))(x)
-    x = Flatten()(x)
-    x = Dense(128, activation='relu')(x)
-    x = BatchNormalization()(x)
-    x = Dropout(0.5)(x)  # Increased dropout before the final layer
-    outputs = Dense(10, activation='softmax')(x)
+    s2 = layers.Add()([s1, c5])
 
-    # Create and compile model
-    model = Model(inputs=inputs, outputs=outputs, name="model3")
-    model.compile(optimizer='adam', loss='sparse_categorical_crossentropy', metrics=['accuracy'])
+    c6 = layers.Conv2D(128, (3, 3), name='C6', activation='relu', padding='same')(s2)
+    c6 = layers.BatchNormalization()(c6)
+    c6 = layers.Dropout(0.5)(c6)
 
+    c7 = layers.Conv2D(128, (3, 3), name='C7', activation='relu', padding='same')(c6)
+    c7 = layers.BatchNormalization()(c7)
+    c7 = layers.Dropout(0.5)(c7)
+
+    s3 = layers.Add()([s2, c7])
+    
+    pool = layers.MaxPooling2D((4, 4), strides=(4, 4))(s3)
+    flatten = layers.Flatten()(pool)
+    
+    dense = layers.Dense(128, activation='relu')(flatten)
+    dense = layers.BatchNormalization()(dense)
+
+    output = layers.Dense(10, activation='softmax')(dense)
+
+    model = Model(inputs=inputs, outputs=output)
     return model
 
 
